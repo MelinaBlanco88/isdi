@@ -2,8 +2,10 @@
 import { addBusinessDays, addDays, getYear, parseISO, isSameYear } from 'date-fns'
 
 export function calculatePaymentDate(invoiceDateStr: string, classDateStr: string, classType: string) {
-    const invoiceDate = parseISO(invoiceDateStr)
-    const classDate = parseISO(classDateStr)
+    // Append T00:00:00 to force local time parsing for date-only strings
+    // This prevents timezone shifts when converting to Date objects (which default to UTC for YYYY-MM-DD)
+    const invoiceDate = parseISO(invoiceDateStr.includes('T') ? invoiceDateStr : invoiceDateStr + 'T00:00:00')
+    const classDate = parseISO(classDateStr.includes('T') ? classDateStr : classDateStr + 'T00:00:00')
     const classYear = getYear(classDate)
 
     if (classYear === 2025) {

@@ -126,7 +126,7 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span>{format(new Date(cls.date), 'dd MMM yyyy', { locale: es })}</span>
+                                                <span>{format(parseISO(cls.date + 'T00:00:00'), 'dd MMM yyyy', { locale: es })}</span>
                                                 <span className="text-xs text-slate-400">{cls.time.slice(0, 5)}</span>
                                             </div>
                                         </td>
