@@ -37,21 +37,8 @@ export default async function ClassDetailsPage({ params }: { params: Promise<{ i
 
                 {/* Header Class Info */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900 mb-4">{classItem.class_name}</h1>
-                    <div className="flex flex-wrap gap-4 text-slate-600">
-                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-slate-200">
-                            <Calendar size={16} />
-                            <span>{format(new Date(classItem.date), 'EEEE d MMMM, yyyy', { locale: es })}</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-slate-200">
-                            <Clock size={16} />
-                            <span>{classItem.time.slice(0, 5)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-slate-200">
-                            {classItem.is_online ? <Laptop size={16} /> : <MapPin size={16} />}
-                            <span>{classItem.is_online ? 'Online' : classItem.location}</span>
-                        </div>
-                    </div>
+                    <h1 className="text-3xl font-bold text-slate-900 mb-1">{classItem.class_name}</h1>
+                    <p className="text-slate-500">Administra los detalles, temario y facturación de esta clase.</p>
                 </div>
 
                 <ClassDetailsEditor classItem={classItem} />
