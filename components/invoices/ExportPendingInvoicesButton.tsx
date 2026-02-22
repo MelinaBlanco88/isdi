@@ -76,7 +76,7 @@ export default function ExportPendingInvoicesButton({ invoices }: ExportButtonPr
     return (
         <button
             onClick={handleExport}
-            className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
         >
             <Download size={16} />
             Exportar Pendientes

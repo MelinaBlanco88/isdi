@@ -19,7 +19,7 @@ export default function OverdueAlert({ overdueCount, totalOverdueAmount }: Overd
                 <h3 className="font-bold text-red-900">Pagos Vencidos Detectados</h3>
                 <p className="text-sm text-red-700 mt-1">
                     Tienes <strong>{overdueCount}</strong> facturas que han superado la fecha estimada de cobro.
-                    Monto total pendiente: <strong>${totalOverdueAmount.toFixed(2)}</strong>.
+                    Monto total pendiente: <strong>${totalOverdueAmount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>.
                 </p>
                 <p className="text-xs text-red-500 mt-2">
                     Te recomendamos contactar a administración para verificar el estado.

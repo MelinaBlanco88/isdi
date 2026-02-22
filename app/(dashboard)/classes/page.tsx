@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import AppShell from '@/components/layout/AppShell'
+
 import ClassTable from '@/components/classes/ClassTable'
 import NewClassForm from '@/components/classes/NewClassForm'
 
@@ -17,7 +17,7 @@ export default async function ClassesPage() {
         .order('time', { ascending: false })
 
     return (
-        <AppShell>
+        <>
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -45,6 +45,6 @@ export default async function ClassesPage() {
                     </div>
                 </div>
             </div>
-        </AppShell>
+        </>
     )
 }

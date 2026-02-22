@@ -18,5 +18,12 @@
 }
 
 body {
-    @apply bg-slate-50 text-slate-900;
+  @apply bg-slate-50 text-slate-900;
+}
+
+button,
+a,
+[role="button"],
+summary {
+  cursor: pointer !important;
 }

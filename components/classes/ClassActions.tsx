@@ -39,7 +39,7 @@ export default function ClassActions({ classItem }: { classItem: any }) {
                 <button
                     onClick={handleMarkAsCompleted}
                     disabled={loading}
-                    className="flex items-center gap-1 text-xs bg-black text-white px-2 py-1 rounded hover:bg-gray-800 disabled:opacity-50"
+                    className="flex items-center gap-1 text-xs bg-black text-white px-2 py-1 rounded hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
                 >
                     <CheckCircle className="w-3 h-3" />
                     {loading ? '...' : 'Marcar dictada'}
@@ -47,7 +47,7 @@ export default function ClassActions({ classItem }: { classItem: any }) {
                 <button
                     onClick={handleDelete}
                     disabled={loading}
-                    className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-red-500 transition-colors"
+                    className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                     title="Eliminar clase"
                 >
                     <Trash2 size={14} />
@@ -68,14 +68,14 @@ export default function ClassActions({ classItem }: { classItem: any }) {
                     <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded border ${invoice.is_paid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
                         <FileText className="w-3 h-3" />
                         {invoice.is_paid ? 'Pagada' : 'Facturada'}
-                        {invoice.amount && <span className="font-semibold">${Number(invoice.amount).toFixed(2)}</span>}
+                        {invoice.amount && <span className="font-semibold">${Number(invoice.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>}
                     </div>
 
                     {!invoice.is_paid && (
                         <button
                             onClick={() => handleMarkAsPaid(invoice.id)}
                             disabled={loading}
-                            className="bg-green-600 text-white p-1 rounded hover:bg-green-700 disabled:opacity-50"
+                            className="bg-green-600 text-white p-1 rounded hover:bg-green-700 disabled:opacity-50 cursor-pointer"
                             title="Marcar como pagada"
                         >
                             <BadgeDollarSign className="w-3 h-3" />
@@ -86,7 +86,7 @@ export default function ClassActions({ classItem }: { classItem: any }) {
 
                 <button
                     onClick={() => setShowInvoiceModal(true)}
-                    className="flex items-center gap-1 text-xs border border-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-50"
+                    className="flex items-center gap-1 text-xs border border-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer"
                 >
                     <Upload className="w-3 h-3" />
                     Subir Factura
@@ -96,7 +96,7 @@ export default function ClassActions({ classItem }: { classItem: any }) {
             <button
                 onClick={handleDelete}
                 disabled={loading}
-                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-red-500 transition-colors ml-2"
+                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-red-500 transition-colors ml-2 cursor-pointer"
                 title="Eliminar clase"
             >
                 <Trash2 size={14} />

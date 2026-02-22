@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import AppShell from '@/components/layout/AppShell'
+
 import { User, Mail, Bell, Shield } from 'lucide-react'
 
 export default async function SettingsPage() {
@@ -9,7 +9,7 @@ export default async function SettingsPage() {
     if (!user) return null
 
     return (
-        <AppShell>
+        <>
             <div className="max-w-3xl mx-auto space-y-6">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
@@ -64,6 +64,6 @@ export default async function SettingsPage() {
                 </div>
 
             </div>
-        </AppShell>
+        </>
     )
 }

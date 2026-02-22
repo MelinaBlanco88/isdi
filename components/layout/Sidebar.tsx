@@ -11,7 +11,9 @@ import {
     Settings,
     LogOut,
     Menu,
-    X
+    X,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -19,13 +21,13 @@ import { useRouter } from 'next/navigation'
 const navItems = [
     { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/classes', icon: BookOpen, label: 'Clases' },
-    // Placeholder links for future expansion
     { href: '/billing', icon: FileText, label: 'Facturación' },
     { href: '/settings', icon: Settings, label: 'Configuración' },
 ]
 
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false)
+    const [isCollapsed, setIsCollapsed] = useState(false)
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
@@ -39,7 +41,7 @@ export default function Sidebar() {
         <>
             {/* Mobile Toggle */}
             <button
-                className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded-md shadow-sm border"
+                className="lg:hidden fixed top-4 right-4 z-50 p-2.5 bg-white rounded-xl shadow-lg border border-slate-200 hover:bg-slate-50 transition-all active:scale-95"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -47,17 +49,38 @@ export default function Sidebar() {
 
             {/* Sidebar Container */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static",
+                "fixed inset-y-0 left-0 z-40 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static flex-shrink-0",
+                isCollapsed ? "w-[72px]" : "w-64",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full relative">
+                    {/* Collapse Toggle Button (Desktop only) */}
+                    <button
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="hidden lg:flex absolute -right-3 top-20 z-50 w-6 h-6 bg-white border border-slate-200 rounded-full items-center justify-center shadow-md hover:bg-slate-50 hover:shadow-lg transition-all text-slate-600 cursor-pointer"
+                    >
+                        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                    </button>
+
                     {/* Logo Area */}
-                    <div className="h-16 flex items-center px-6 border-b border-slate-800">
-                        <h1 className="text-xl font-bold tracking-wider">ISDI<span className="text-blue-500">_Control</span></h1>
+                    <div className={cn(
+                        "h-16 flex items-center border-b border-slate-800/50 transition-all duration-300",
+                        isCollapsed ? "px-4 justify-center" : "px-6"
+                    )}>
+                        {isCollapsed ? (
+                            <span className="text-xl font-bold text-blue-400">I</span>
+                        ) : (
+                            <h1 className="text-xl font-bold tracking-wider">
+                                ISDI<span className="text-blue-400">_Facturas</span>
+                            </h1>
+                        )}
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 py-6 px-3 space-y-1">
+                    <nav className={cn(
+                        "flex-1 py-6 space-y-1 transition-all duration-300",
+                        isCollapsed ? "px-2" : "px-3"
+                    )}>
                         {navItems.map((item) => {
                             const Icon = item.icon
                             const isActive = pathname === item.href
@@ -66,28 +89,34 @@ export default function Sidebar() {
                                     key={item.href}
                                     href={item.href}
                                     onClick={() => setIsOpen(false)}
+                                    title={isCollapsed ? item.label : undefined}
                                     className={cn(
-                                        "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                                        "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200",
+                                        isCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5",
                                         isActive
-                                            ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
-                                            : "text-slate-400 hover:text-white hover:bg-slate-800"
+                                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700"
+                                            : "text-slate-400 hover:text-white hover:bg-white/5"
                                     )}
                                 >
-                                    <Icon size={18} />
-                                    {item.label}
+                                    <Icon size={18} className="flex-shrink-0" />
+                                    {!isCollapsed && <span>{item.label}</span>}
                                 </Link>
                             )
                         })}
                     </nav>
 
                     {/* User Footer */}
-                    <div className="p-4 border-t border-slate-800">
+                    <div className="p-3 border-t border-slate-800/50">
                         <button
                             onClick={handleSignOut}
-                            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-slate-800 w-full transition-colors"
+                            title={isCollapsed ? "Cerrar Sesión" : undefined}
+                            className={cn(
+                                "flex items-center gap-3 rounded-xl text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-white/5 w-full transition-all duration-200",
+                                isCollapsed ? "px-3 py-3 justify-center" : "px-3 py-2.5"
+                            )}
                         >
-                            <LogOut size={18} />
-                            Cerrar Sesión
+                            <LogOut size={18} className="flex-shrink-0" />
+                            {!isCollapsed && <span>Cerrar Sesión</span>}
                         </button>
                     </div>
                 </div>
@@ -96,7 +125,7 @@ export default function Sidebar() {
             {/* Overlay for mobile */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
                     onClick={() => setIsOpen(false)}
                 />
             )}

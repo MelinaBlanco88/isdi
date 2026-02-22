@@ -144,7 +144,7 @@ export default function ClassDetailsEditor({ classItem }: { classItem: any }) {
                         <button
                             type="button"
                             onClick={() => setClassType('open')}
-                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${classType === 'open'
+                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${classType === 'open'
                                 ? 'bg-blue-50 border-blue-200 text-blue-700'
                                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                                 }`}
@@ -154,7 +154,7 @@ export default function ClassDetailsEditor({ classItem }: { classItem: any }) {
                         <button
                             type="button"
                             onClick={() => setClassType('in_company')}
-                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${classType === 'in_company'
+                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${classType === 'in_company'
                                 ? 'bg-purple-50 border-purple-200 text-purple-700'
                                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                                 }`}
@@ -206,19 +206,19 @@ export default function ClassDetailsEditor({ classItem }: { classItem: any }) {
                 <div className="pt-4 border-t border-slate-200/60 space-y-1">
                     <div className="flex justify-between text-xs text-slate-500">
                         <span>Subtotal (Horas * Tarifa):</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>${subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-xs text-slate-500">
                         <span>+ IVA (16%):</span>
-                        <span>${iva.toFixed(2)}</span>
+                        <span>${iva.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-xs text-red-500">
                         <span>- Ret. IVA (10.6667%):</span>
-                        <span>-${retIva.toFixed(2)}</span>
+                        <span>-${retIva.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-xs text-red-500">
                         <span>- Ret. ISR (10%):</span>
-                        <span>-${retIsr.toFixed(2)}</span>
+                        <span>-${retIsr.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
 
                     <div className="flex flex-col gap-2 pt-4 border-t border-slate-200 mt-2">
@@ -228,7 +228,7 @@ export default function ClassDetailsEditor({ classItem }: { classItem: any }) {
                                 <button
                                     type="button"
                                     onClick={() => setManualTotal(!manualTotal)}
-                                    className={`p-1.5 rounded-md transition-colors ${manualTotal ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400'}`}
+                                    className={`p-1.5 rounded-md transition-colors cursor-pointer ${manualTotal ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400'}`}
                                     title={manualTotal ? "Edición manual habilitada" : "Cálculo automático"}
                                 >
                                     {manualTotal ? <Unlock size={14} /> : <Lock size={14} />}
@@ -244,8 +244,8 @@ export default function ClassDetailsEditor({ classItem }: { classItem: any }) {
                                 readOnly={!manualTotal}
                                 onChange={(e) => setNetTotal(parseFloat(e.target.value) || 0)}
                                 className={`w-full pl-7 pr-3 py-3 rounded-lg text-lg font-bold text-right transition-all ${manualTotal
-                                        ? 'bg-orange-50/50 border-orange-300 text-orange-700 focus:ring-2 focus:ring-orange-500'
-                                        : 'bg-slate-100 border-transparent text-slate-700 focus:ring-0'
+                                    ? 'bg-orange-50/50 border-orange-300 text-orange-700 focus:ring-2 focus:ring-orange-500'
+                                    : 'bg-slate-100 border-transparent text-slate-700 focus:ring-0'
                                     }`}
                             />
                         </div>
@@ -321,7 +321,7 @@ export default function ClassDetailsEditor({ classItem }: { classItem: any }) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center gap-2 bg-slate-900 text-white px-8 py-3 rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-all font-medium shadow-lg shadow-slate-200"
+                    className="flex items-center gap-2 bg-slate-900 text-white px-8 py-3 rounded-xl hover:bg-slate-800 disabled:opacity-50 transition-all font-medium shadow-lg shadow-slate-200 cursor-pointer"
                 >
                     {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
                     Guardar Todo

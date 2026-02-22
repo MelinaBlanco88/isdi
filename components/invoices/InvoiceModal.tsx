@@ -89,7 +89,7 @@ export default function InvoiceModal({ classId, defaultAmount, className, classD
                         <h2 className="text-lg font-bold text-slate-900">Subir Factura</h2>
                         <p className="text-sm text-slate-500">Registra una nueva factura para esta clase.</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500 cursor-pointer">
                         <X size={20} />
                     </button>
                 </div>
@@ -117,7 +117,7 @@ export default function InvoiceModal({ classId, defaultAmount, className, classD
                                 <span className="absolute left-3 top-2.5 text-slate-400">$</span>
                                 <input
                                     type="text"
-                                    value={defaultAmount ? Number(defaultAmount).toFixed(2) : '0.00'}
+                                    value={defaultAmount ? Number(defaultAmount).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                                     disabled
                                     className="w-full bg-slate-50 border-slate-200 rounded-lg pl-7 pr-3 py-2.5 text-sm text-slate-500 cursor-not-allowed"
                                 />
@@ -191,7 +191,7 @@ Saludos!`)
                                 // Added facturacion@isdi.mx to the recipients
                                 window.open(`mailto:facturacion@isdi.mx?subject=${subject}&body=${body}`)
                             }}
-                            className="text-slate-500 hover:text-slate-800 text-sm font-medium flex items-center gap-2 px-2"
+                            className="text-slate-500 hover:text-slate-800 text-sm font-medium flex items-center gap-2 px-2 cursor-pointer"
                         >
                             <Mail size={16} /> Preparar Correo
                         </button>
@@ -200,14 +200,14 @@ Saludos!`)
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                 disabled={loading}
                             >
                                 Cancelar
                             </button>
                             <button
                                 type="submit"
-                                className="px-6 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-sm"
+                                className="px-6 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
                                 disabled={loading}
                             >
                                 {loading ? 'Guardando...' : 'Guardar Factura'}

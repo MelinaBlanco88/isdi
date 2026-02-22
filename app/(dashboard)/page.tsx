@@ -3,7 +3,7 @@ import { DollarSign, Clock, Wallet } from 'lucide-react'
 import StatCard from '@/components/dashboard/StatCard'
 import ClassTable from '@/components/classes/ClassTable'
 import NewClassForm from '@/components/classes/NewClassForm'
-import AppShell from '@/components/layout/AppShell'
+
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection'
 
 import OverdueAlert from '@/components/dashboard/OverdueAlert'
@@ -60,7 +60,7 @@ export default async function Dashboard() {
   const { totalPaid, totalPending, total, overdueCount, totalOverdueAmount } = calculateStats(classes || [])
 
   return (
-    <AppShell>
+    <>
       <div className="flex flex-col gap-8">
 
         {/* Overdue Alert */}
@@ -80,19 +80,19 @@ export default async function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             label="Ingresos Totales"
-            value={`$${totalPaid.toFixed(2)}`}
+            value={`$${totalPaid.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={Wallet}
             color="green"
           />
           <StatCard
             label="Pendiente de Cobro"
-            value={`$${totalPending.toFixed(2)}`}
+            value={`$${totalPending.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={Clock}
             color="orange"
           />
           <StatCard
             label="Proyección Total"
-            value={`$${total.toFixed(2)}`}
+            value={`$${total.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={DollarSign}
             color="blue"
           />
@@ -108,6 +108,6 @@ export default async function Dashboard() {
           <ClassTable classes={classes || []} />
         </div>
       </div>
-    </AppShell>
+    </>
   )
 }

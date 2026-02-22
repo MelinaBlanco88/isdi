@@ -30,7 +30,7 @@ export default function ClassTable({ classes }: { classes: any[] }) {
             <div className="flex p-1 bg-slate-100 rounded-lg w-fit">
                 <button
                     onClick={() => setActiveTab('pending')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'pending'
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${activeTab === 'pending'
                         ? 'bg-white text-slate-900 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
                         }`}
@@ -39,7 +39,7 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'history'
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${activeTab === 'history'
                         ? 'bg-white text-slate-900 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
                         }`}

@@ -62,7 +62,7 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
             .sort((a, b) => a[0].localeCompare(b[0]))
             .map(([_, data]) => ({
                 ...data,
-                avgRate: data.hours > 0 ? (data.totalIncome / data.hours).toFixed(0) : 0
+                avgRate: data.hours > 0 ? Math.round(data.totalIncome / data.hours) : 0
             }))
     }, [classes])
 
@@ -104,7 +104,7 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
                                 />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value: any) => [`$${value?.toFixed(2)}`, '']}
+                                    formatter={(value: any) => [`$${Number(value).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, '']}
                                 />
                                 <Legend />
                                 <Area
