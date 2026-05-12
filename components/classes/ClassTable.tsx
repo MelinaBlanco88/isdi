@@ -2,10 +2,10 @@
 
 import { format, parseISO, isPast } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Clock, DollarSign, Pencil, Check, X, Zap } from 'lucide-react'
+import { Clock, DollarSign, Pencil, Check, X, Zap, Search, Filter, ChevronDown } from 'lucide-react'
 import ClassActions from './ClassActions'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { calculatePaymentDate } from '@/utils/finance'
 import { updateClassPrice } from '@/app/actions/classes'
 
@@ -14,6 +14,12 @@ export default function ClassTable({ classes }: { classes: any[] }) {
     const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
     const [editPriceValue, setEditPriceValue] = useState<string>('')
     const [savingPrice, setSavingPrice] = useState(false)
+
+    // Search & Filter state
+    const [searchQuery, setSearchQuery] = useState('')
+    const [filterType, setFilterType] = useState<'all' | 'open' | 'in_company' | 'special'>('all')
+    const [filterPayment, setFilterPayment] = useState<'all' | 'paid' | 'invoiced' | 'unpaid' | 'overdue'>('all')
+    const [showFilters, setShowFilters] = useState(false)
 
     if (!classes || classes.length === 0) {
         return (
@@ -26,7 +32,51 @@ export default function ClassTable({ classes }: { classes: any[] }) {
     const pendingClasses = classes.filter(c => !c.class_completed)
     const historyClasses = classes.filter(c => c.class_completed)
 
-    const dataToDisplay = activeTab === 'pending' ? pendingClasses : historyClasses
+    const baseData = activeTab === 'pending' ? pendingClasses : historyClasses
+
+    // Apply search and filters
+    const dataToDisplay = useMemo(() => {
+        let filtered = baseData
+
+        // Text search
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim()
+            filtered = filtered.filter(cls => {
+                const name = (cls.class_name || '').toLowerCase()
+                const location = (cls.location || '').toLowerCase()
+                const date = (cls.date || '').toLowerCase()
+                const amount = (cls.total_amount?.toString() || '')
+                const invoiceFolio = (cls.invoices?.[0]?.folio_fiscal || '').toLowerCase()
+                return name.includes(q) || location.includes(q) || date.includes(q) || amount.includes(q) || invoiceFolio.includes(q)
+            })
+        }
+
+        // Type filter
+        if (filterType !== 'all') {
+            filtered = filtered.filter(cls => cls.class_type === filterType)
+        }
+
+        // Payment status filter
+        if (filterPayment !== 'all') {
+            filtered = filtered.filter(cls => {
+                const invoice = cls.invoices?.[0]
+                if (filterPayment === 'paid') return invoice?.is_paid === true
+                if (filterPayment === 'invoiced') return invoice && !invoice.is_paid
+                if (filterPayment === 'unpaid') return !invoice
+                if (filterPayment === 'overdue') {
+                    if (!invoice || invoice.is_paid) return false
+                    try {
+                        const baseDate = invoice.issue_date || cls.date
+                        const paymentDate = calculatePaymentDate(baseDate, cls.date, cls.class_type)
+                        return isPast(paymentDate)
+                    } catch { return false }
+                }
+                return true
+            })
+        }
+
+        return filtered
+    }, [baseData, searchQuery, filterType, filterPayment])
 
     const startEditPrice = (cls: any) => {
         setEditingPriceId(cls.id)
@@ -49,29 +99,142 @@ export default function ClassTable({ classes }: { classes: any[] }) {
 
     const fmtMoney = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+    const hasActiveFilters = filterType !== 'all' || filterPayment !== 'all' || searchQuery.trim() !== ''
+
     return (
         <div className="space-y-4">
             {/* Tabs */}
-            <div className="flex p-1 bg-slate-100 rounded-lg w-fit">
-                <button
-                    onClick={() => setActiveTab('pending')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${activeTab === 'pending'
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                >
-                    Pendientes por dictar ({pendingClasses.length})
-                </button>
-                <button
-                    onClick={() => setActiveTab('history')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${activeTab === 'history'
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                >
-                    Historial / Dictadas ({historyClasses.length})
-                </button>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                <div className="flex p-1 bg-slate-100 rounded-lg w-fit">
+                    <button
+                        onClick={() => setActiveTab('pending')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${activeTab === 'pending'
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                    >
+                        Pendientes ({pendingClasses.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('history')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${activeTab === 'history'
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                    >
+                        Dictadas ({historyClasses.length})
+                    </button>
+                </div>
+
+                {/* Search & Filter Bar */}
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar clase, folio, lugar..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg w-64 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white hover:border-slate-300 placeholder:text-slate-400"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`flex items-center gap-1.5 px-3 py-2 text-sm border rounded-lg transition-all cursor-pointer ${showFilters || hasActiveFilters
+                            ? 'bg-blue-50 border-blue-200 text-blue-700'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                    >
+                        <Filter size={14} />
+                        Filtros
+                        {hasActiveFilters && (
+                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        )}
+                        <ChevronDown size={12} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                    </button>
+                </div>
             </div>
+
+            {/* Filter Panel */}
+            {showFilters && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-wrap items-center gap-4 animate-in slide-in-from-top-2 duration-200">
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tipo de Programa</label>
+                        <div className="flex gap-1.5">
+                            {[
+                                { value: 'all', label: 'Todos' },
+                                { value: 'open', label: 'Abierto' },
+                                { value: 'in_company', label: 'In Company' },
+                                { value: 'special', label: 'Especial' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setFilterType(opt.value as any)}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${filterType === opt.value
+                                        ? 'bg-slate-900 text-white shadow-sm'
+                                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Estado de Pago</label>
+                        <div className="flex gap-1.5">
+                            {[
+                                { value: 'all', label: 'Todos' },
+                                { value: 'paid', label: 'Pagadas' },
+                                { value: 'invoiced', label: 'Facturadas' },
+                                { value: 'unpaid', label: 'Sin factura' },
+                                { value: 'overdue', label: 'Vencidas' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setFilterPayment(opt.value as any)}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${filterPayment === opt.value
+                                        ? 'bg-slate-900 text-white shadow-sm'
+                                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {hasActiveFilters && (
+                        <>
+                            <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
+                            <button
+                                onClick={() => { setFilterType('all'); setFilterPayment('all'); setSearchQuery('') }}
+                                className="text-xs text-red-500 hover:text-red-700 font-medium cursor-pointer hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                            >
+                                Limpiar filtros
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
+
+            {/* Results info */}
+            {hasActiveFilters && (
+                <p className="text-xs text-slate-500">
+                    Mostrando <span className="font-semibold text-slate-700">{dataToDisplay.length}</span> de {baseData.length} clases
+                </p>
+            )}
 
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                 <div className="overflow-x-auto">
@@ -98,8 +261,19 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                         <tbody className="divide-y divide-slate-100">
                             {dataToDisplay.length === 0 && (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
-                                        No hay clases en esta sección.
+                                    <td colSpan={8} className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Search size={24} className="text-slate-300" />
+                                            <p className="text-slate-400 font-medium">No se encontraron resultados</p>
+                                            {hasActiveFilters && (
+                                                <button
+                                                    onClick={() => { setFilterType('all'); setFilterPayment('all'); setSearchQuery('') }}
+                                                    className="text-xs text-blue-600 hover:underline cursor-pointer"
+                                                >
+                                                    Limpiar filtros
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             )}

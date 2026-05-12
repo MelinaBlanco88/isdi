@@ -40,12 +40,13 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
                 }
             }
 
-            const amount = cls.total_amount || 0
-            const hours = cls.class_hours || 0
+            const amount = Number(cls.total_amount) || 0
+            // Ensure hours is a reasonable number (per class, usually 1-12 hrs)
+            const rawHours = Number(cls.class_hours) || 0
+            const hours = rawHours > 0 && rawHours <= 24 ? rawHours : 0
 
             // Check invoice status
             const isPaid = cls.invoices?.some((inv: any) => inv.is_paid)
-            const hasInvoice = cls.invoices && cls.invoices.length > 0
 
             monthlyData[monthKey].totalIncome += amount
             monthlyData[monthKey].hours += hours
@@ -62,11 +63,17 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
             .sort((a, b) => a[0].localeCompare(b[0]))
             .map(([_, data]) => ({
                 ...data,
+                totalIncome: Math.round(data.totalIncome * 100) / 100,
+                paidIncome: Math.round(data.paidIncome * 100) / 100,
+                pendingIncome: Math.round(data.pendingIncome * 100) / 100,
+                hours: Math.round(data.hours * 10) / 10,
                 avgRate: data.hours > 0 ? Math.round(data.totalIncome / data.hours) : 0
             }))
     }, [classes])
 
     if (stats.length === 0) return null
+
+    const fmtMoney = (value: any) => `$${Number(value).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -100,11 +107,11 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
                                     tick={{ fontSize: 12, fill: '#64748b' }}
                                     axisLine={false}
                                     tickLine={false}
-                                    tickFormatter={(value) => `$${value / 1000}k`}
+                                    tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
                                 />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value: any) => [`$${Number(value).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, '']}
+                                    formatter={(value: any, name?: string) => [fmtMoney(value), name || '']}
                                 />
                                 <Legend />
                                 <Area
@@ -148,10 +155,12 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
                                     tick={{ fontSize: 12, fill: '#64748b' }}
                                     axisLine={false}
                                     tickLine={false}
+                                    tickFormatter={(value) => `${value} hrs`}
                                 />
                                 <Tooltip
                                     cursor={{ fill: '#f8fafc' }}
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    formatter={(value: any) => [`${value} hrs`, 'Horas Dictadas']}
                                 />
                                 <Bar
                                     dataKey="hours"
@@ -177,7 +186,10 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" hide />
                                 <YAxis hide domain={['dataMin - 100', 'dataMax + 100']} />
-                                <Tooltip />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    formatter={(value: any) => [fmtMoney(value), 'Tarifa Promedio']}
+                                />
                                 <Line
                                     type="monotone"
                                     dataKey="avgRate"
@@ -197,7 +209,7 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
                         {classes.length}
                     </div>
 
-                    <div className="flex gap-4 mt-2 pt-4 border-t border-slate-700/50">
+                    <div className="flex gap-4 mt-2 pt-4 border-t border-slate-700/50 flex-wrap">
                         <div>
                             <p className="text-xs text-slate-400 uppercase">Abierto</p>
                             <p className="text-lg font-semibold text-blue-400">
@@ -208,6 +220,12 @@ export default function AnalyticsSection({ classes }: { classes: any[] }) {
                             <p className="text-xs text-slate-400 uppercase">In Company</p>
                             <p className="text-lg font-semibold text-purple-400">
                                 {classes.filter(c => c.class_type === 'in_company').length}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-400 uppercase">Especial</p>
+                            <p className="text-lg font-semibold text-amber-400">
+                                {classes.filter(c => c.class_type === 'special').length}
                             </p>
                         </div>
                     </div>

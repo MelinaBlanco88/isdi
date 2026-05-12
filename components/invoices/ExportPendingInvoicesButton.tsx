@@ -20,50 +20,110 @@ export default function ExportPendingInvoicesButton({ invoices }: ExportButtonPr
             return
         }
 
-        // Prepare CSV Data
-        const headers = ['Título de la Clase', 'Fecha Dictada', 'Fecha Estimada Pago', 'Tipo de Programa', 'Total Factura']
+        // Headers
+        const headers = [
+            'Titulo de la Clase',
+            'Tipo de Programa',
+            'Fecha Dictada',
+            'Fecha Emision Factura',
+            'Fecha Estimada Pago',
+            'Folio Fiscal',
+            'Total Factura'
+        ]
 
-        const removeAccents = (str: string) => {
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        const escapeField = (field: any): string => {
+            const str = String(field ?? '')
+            // Always wrap in quotes for safe Google Sheets import
+            return `"${str.replace(/"/g, '""')}"`
         }
+
+        // Format a number to exactly 2 decimals as a clean numeric string
+        const fmtNumber = (n: any): string => {
+            const num = Number(n) || 0
+            return num.toFixed(2)
+        }
+
+        let grandTotal = 0
 
         const csvRows = pendingInvoices.map(inv => {
             const classTitle = inv.classes?.class_name || 'Sin nombre'
-            const classDate = inv.classes?.date ? format(new Date(inv.classes.date), 'dd/MM/yyyy') : '--'
 
-            // Use stored expected date or calculate if missing
-            let estimatedDate = inv.expected_payment_date
-            if (!estimatedDate && inv.invoice_date && inv.classes?.date) {
-                const calcDate = calculatePaymentDate(inv.invoice_date, inv.classes.date, inv.classes.class_type || 'open')
-                estimatedDate = format(calcDate, 'yyyy-MM-dd')
+            const classType = inv.classes?.class_type === 'in_company'
+                ? 'In Company'
+                : inv.classes?.class_type === 'special'
+                    ? 'Sesion Especial'
+                    : 'Programa Abierto'
+
+            const classDate = inv.classes?.date
+                ? format(new Date(inv.classes.date), 'dd/MM/yyyy')
+                : ''
+
+            const invoiceDate = inv.invoice_date
+                ? format(new Date(inv.invoice_date), 'dd/MM/yyyy')
+                : ''
+
+            // Calculate estimated payment date
+            let estimatedDate = ''
+            if (inv.invoice_date && inv.classes?.date) {
+                try {
+                    const calcDate = calculatePaymentDate(inv.invoice_date, inv.classes.date, inv.classes.class_type || 'open')
+                    estimatedDate = format(calcDate, 'dd/MM/yyyy')
+                } catch { }
             }
-            const formattedEstDate = estimatedDate ? format(new Date(estimatedDate), 'dd/MM/yyyy') : '--'
 
-            const type = inv.classes?.class_type === 'in_company' ? 'In Company' : 'Programa Abierto'
-            const amount = inv.amount || 0
-
-            // Escape fields for CSV
-            const escape = (field: any) => {
-                const stringField = String(field)
-                if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
-                    return `"${stringField.replace(/"/g, '""')}"`
-                }
-                return stringField
-            }
+            const folio = inv.folio_fiscal || ''
+            const amount = Number(inv.amount) || 0
+            grandTotal += amount
 
             return [
-                escape(classTitle),
-                escape(classDate),
-                escape(formattedEstDate),
-                escape(type),
-                escape(amount)
+                escapeField(classTitle),
+                escapeField(classType),
+                escapeField(classDate),
+                escapeField(invoiceDate),
+                escapeField(estimatedDate),
+                escapeField(folio),
+                fmtNumber(amount) // No quotes so Google Sheets treats it as number
             ].join(',')
         })
 
-        const csvContent = [headers.join(','), ...csvRows].join('\n')
+        // Empty separator row
+        const emptyRow = Array(headers.length).fill('').join(',')
 
-        // Create Blob and Download
-        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' })
+        // Total row: label in first column, amount in last column
+        const totalRow = [
+            escapeField('TOTAL PENDIENTE'),
+            '', '', '', '', '',
+            fmtNumber(grandTotal)
+        ].join(',')
+
+        // Count row
+        const countRow = [
+            escapeField(`Total de facturas: ${pendingInvoices.length}`),
+            '', '', '', '', '',
+            ''
+        ].join(',')
+
+        // Exported date row
+        const exportDateRow = [
+            escapeField(`Exportado: ${format(new Date(), "dd 'de' MMMM yyyy, HH:mm", { locale: es })}`),
+            '', '', '', '', '',
+            ''
+        ].join(',')
+
+        const csvContent = [
+            headers.map(h => escapeField(h)).join(','),
+            ...csvRows,
+            emptyRow,
+            totalRow,
+            countRow,
+            exportDateRow
+        ].join('\n')
+
+        // BOM + CSV for proper UTF-8 in Google Sheets
+        const blob = new Blob(
+            [new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent],
+            { type: 'text/csv;charset=utf-8;' }
+        )
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
@@ -71,6 +131,7 @@ export default function ExportPendingInvoicesButton({ invoices }: ExportButtonPr
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+        URL.revokeObjectURL(url)
     }
 
     return (
