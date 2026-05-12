@@ -2,7 +2,7 @@
 
 import { createClass } from '@/app/actions/classes'
 import { useRef, useState, useEffect } from 'react'
-import { Plus, X, MapPin, Calendar, Clock, Laptop, DollarSign, Timer, BookOpen, Sparkles, TrendingUp } from 'lucide-react'
+import { Plus, X, MapPin, Calendar, Clock, Laptop, DollarSign, Timer, BookOpen, Sparkles, TrendingUp, Zap } from 'lucide-react'
 
 export default function NewClassForm() {
     const formRef = useRef<HTMLFormElement>(null)
@@ -13,6 +13,9 @@ export default function NewClassForm() {
     const [hours, setHours] = useState<string>('')
     const [rate, setRate] = useState<string>('1900')
 
+    // Manual price for special sessions
+    const [manualPrice, setManualPrice] = useState<string>('')
+
     // Calculation State
     const [subtotal, setSubtotal] = useState<number>(0)
     const [iva, setIva] = useState<number>(0)
@@ -21,9 +24,11 @@ export default function NewClassForm() {
     const [netTotal, setNetTotal] = useState<number>(0)
 
     // Class Type State
-    const [classType, setClassType] = useState('open') // 'open' | 'in_company'
+    const [classType, setClassType] = useState('open') // 'open' | 'in_company' | 'special'
 
     useEffect(() => {
+        if (classType === 'special') return // Skip auto-calc for special sessions
+
         const h = parseFloat(hours) || 0
         const r = parseFloat(rate) || 0
 
@@ -39,7 +44,7 @@ export default function NewClassForm() {
         setRetIva(calculatedRetIva)
         setRetIsr(calculatedRetIsr)
         setNetTotal(calculatedNet)
-    }, [hours, rate])
+    }, [hours, rate, classType])
 
     // Lock body scroll when modal is open
     useEffect(() => {
@@ -53,12 +58,24 @@ export default function NewClassForm() {
 
     async function clientAction(formData: FormData) {
         setLoading(true)
-        formData.set('total_amount', netTotal.toString())
+
+        if (classType === 'special') {
+            formData.set('total_amount', manualPrice || '0')
+            formData.set('class_hours', hours || '0')
+            formData.set('hourly_rate', '0')
+        } else {
+            formData.set('total_amount', netTotal.toString())
+        }
         formData.set('class_type', classType)
 
         await createClass(formData)
         setIsOpen(false)
         setLoading(false)
+        // Reset state
+        setHours('')
+        setRate('1900')
+        setManualPrice('')
+        setClassType('open')
     }
 
     if (!isOpen) {
@@ -148,7 +165,7 @@ export default function NewClassForm() {
                         {/* Program Type */}
                         <div>
                             <label className="text-sm font-semibold text-slate-700 block mb-3">Tipo de Programa</label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -162,7 +179,7 @@ export default function NewClassForm() {
                                 >
                                     <div className="flex items-center gap-2 mb-1">
                                         <Sparkles size={14} className={classType === 'open' ? 'text-blue-500' : 'text-slate-400'} />
-                                        Programa Abierto
+                                        <span className="text-xs sm:text-sm">Abierto</span>
                                     </div>
                                     <span className="block text-xs font-normal opacity-70">$1,900 / hr</span>
                                     {classType === 'open' && (
@@ -182,11 +199,31 @@ export default function NewClassForm() {
                                 >
                                     <div className="flex items-center gap-2 mb-1">
                                         <TrendingUp size={14} className={classType === 'in_company' ? 'text-violet-500' : 'text-slate-400'} />
-                                        In Company
+                                        <span className="text-xs sm:text-sm">In Company</span>
                                     </div>
                                     <span className="block text-xs font-normal opacity-70">$4,200 / hr</span>
                                     {classType === 'in_company' && (
                                         <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-violet-500 rounded-full ring-2 ring-violet-200"></div>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setClassType('special')
+                                        setRate('0')
+                                    }}
+                                    className={`relative py-4 px-4 rounded-xl border-2 text-sm font-medium transition-all cursor-pointer text-left ${classType === 'special'
+                                        ? 'bg-amber-50 border-amber-400 text-amber-700 ring-1 ring-amber-200'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Zap size={14} className={classType === 'special' ? 'text-amber-500' : 'text-slate-400'} />
+                                        <span className="text-xs sm:text-sm">Especial</span>
+                                    </div>
+                                    <span className="block text-xs font-normal opacity-70">Precio manual</span>
+                                    {classType === 'special' && (
+                                        <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-amber-200"></div>
                                     )}
                                 </button>
                             </div>
@@ -198,65 +235,111 @@ export default function NewClassForm() {
                                 <DollarSign size={15} className="text-emerald-600" />
                                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cotización</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                                        <Timer size={11} /> Horas
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="class_hours"
-                                        min="0"
-                                        step="0.5"
-                                        placeholder="0"
-                                        value={hours}
-                                        onChange={(e) => setHours(e.target.value)}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white hover:border-slate-300"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                                        <DollarSign size={11} /> $/Hora
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="hourly_rate"
-                                        min="0"
-                                        placeholder="0"
-                                        value={rate}
-                                        onChange={(e) => setRate(e.target.value)}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white hover:border-slate-300"
-                                    />
-                                </div>
-                            </div>
 
-                            {/* Tax Breakdown */}
-                            {subtotal > 0 && (
-                                <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
-                                    <div className="flex justify-between text-xs text-slate-500">
-                                        <span>Subtotal:</span>
-                                        <span className="font-mono">${fmt(subtotal)}</span>
+                            {classType === 'special' ? (
+                                /* Special Session: manual price input */
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                                            <Timer size={11} /> Horas (opcional)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="class_hours"
+                                            min="0"
+                                            step="0.5"
+                                            placeholder="0"
+                                            value={hours}
+                                            onChange={(e) => setHours(e.target.value)}
+                                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all bg-white hover:border-slate-300"
+                                        />
                                     </div>
-                                    <div className="flex justify-between text-xs text-slate-500">
-                                        <span>+ IVA (16%):</span>
-                                        <span className="font-mono">${fmt(iva)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs text-red-400">
-                                        <span>- Ret. IVA (10.67%):</span>
-                                        <span className="font-mono">-${fmt(retIva)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs text-red-400">
-                                        <span>- Ret. ISR (10%):</span>
-                                        <span className="font-mono">-${fmt(retIsr)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm font-bold text-slate-900 pt-3 border-t border-slate-200 mt-1">
-                                        <span>Total Neto a Recibir:</span>
-                                        <span className="text-emerald-600 font-mono text-base">${fmt(netTotal)}</span>
+
+                                    <div className="pt-3 border-t border-slate-200/80">
+                                        <label className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                            <DollarSign size={11} /> Precio Total (manual)
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500 font-bold text-lg">$</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="0.00"
+                                                value={manualPrice}
+                                                onChange={(e) => setManualPrice(e.target.value)}
+                                                className="w-full pl-9 pr-4 py-3.5 border-2 border-amber-300 rounded-xl text-lg font-bold text-amber-700 bg-amber-50/50 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all placeholder:text-amber-300"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-amber-600 mt-1.5">
+                                            * El monto se registra tal cual sin cálculos de impuestos.
+                                        </p>
                                     </div>
                                 </div>
+                            ) : (
+                                /* Standard pricing: hours × rate + tax calc */
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                                                <Timer size={11} /> Horas
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="class_hours"
+                                                min="0"
+                                                step="0.5"
+                                                placeholder="0"
+                                                value={hours}
+                                                onChange={(e) => setHours(e.target.value)}
+                                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white hover:border-slate-300"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                                                <DollarSign size={11} /> $/Hora
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="hourly_rate"
+                                                min="0"
+                                                placeholder="0"
+                                                value={rate}
+                                                onChange={(e) => setRate(e.target.value)}
+                                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white hover:border-slate-300"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Tax Breakdown */}
+                                    {subtotal > 0 && (
+                                        <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
+                                            <div className="flex justify-between text-xs text-slate-500">
+                                                <span>Subtotal:</span>
+                                                <span className="font-mono">${fmt(subtotal)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs text-slate-500">
+                                                <span>+ IVA (16%):</span>
+                                                <span className="font-mono">${fmt(iva)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs text-red-400">
+                                                <span>- Ret. IVA (10.67%):</span>
+                                                <span className="font-mono">-${fmt(retIva)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs text-red-400">
+                                                <span>- Ret. ISR (10%):</span>
+                                                <span className="font-mono">-${fmt(retIsr)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm font-bold text-slate-900 pt-3 border-t border-slate-200 mt-1">
+                                                <span>Total Neto a Recibir:</span>
+                                                <span className="text-emerald-600 font-mono text-base">${fmt(netTotal)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <input type="hidden" name="total_amount" value={netTotal} />
+                                </>
                             )}
-
-                            <input type="hidden" name="total_amount" value={netTotal} />
                         </div>
 
                         {/* Location */}

@@ -1,15 +1,19 @@
 'use client'
 
-import { format, addBusinessDays, parseISO, isPast } from 'date-fns'
+import { format, parseISO, isPast } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { MoreHorizontal, FileText, Upload, CheckCircle, Clock } from 'lucide-react'
+import { Clock, DollarSign, Pencil, Check, X, Zap } from 'lucide-react'
 import ClassActions from './ClassActions'
 import Link from 'next/link'
 import { useState } from 'react'
 import { calculatePaymentDate } from '@/utils/finance'
+import { updateClassPrice } from '@/app/actions/classes'
 
 export default function ClassTable({ classes }: { classes: any[] }) {
     const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending')
+    const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
+    const [editPriceValue, setEditPriceValue] = useState<string>('')
+    const [savingPrice, setSavingPrice] = useState(false)
 
     if (!classes || classes.length === 0) {
         return (
@@ -23,6 +27,27 @@ export default function ClassTable({ classes }: { classes: any[] }) {
     const historyClasses = classes.filter(c => c.class_completed)
 
     const dataToDisplay = activeTab === 'pending' ? pendingClasses : historyClasses
+
+    const startEditPrice = (cls: any) => {
+        setEditingPriceId(cls.id)
+        setEditPriceValue(cls.total_amount?.toString() || '0')
+    }
+
+    const cancelEditPrice = () => {
+        setEditingPriceId(null)
+        setEditPriceValue('')
+    }
+
+    const savePrice = async (classId: string) => {
+        setSavingPrice(true)
+        const newAmount = parseFloat(editPriceValue) || 0
+        await updateClassPrice(classId, newAmount)
+        setEditingPriceId(null)
+        setEditPriceValue('')
+        setSavingPrice(false)
+    }
+
+    const fmtMoney = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
     return (
         <div className="space-y-4">
@@ -57,6 +82,12 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                                 <th className="px-6 py-4">Clase</th>
                                 <th className="px-6 py-4">Tipo</th>
                                 <th className="px-6 py-4">Fecha Clase</th>
+                                <th className="px-6 py-4">
+                                    <div className="flex items-center gap-1">
+                                        <DollarSign size={12} />
+                                        Monto
+                                    </div>
+                                </th>
                                 {activeTab === 'history' && (
                                     <th className="px-6 py-4 text-orange-600">Fecha Est. Pago</th>
                                 )}
@@ -67,7 +98,7 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                         <tbody className="divide-y divide-slate-100">
                             {dataToDisplay.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                                    <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
                                         No hay clases en esta sección.
                                     </td>
                                 </tr>
@@ -79,13 +110,9 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                                 let isOverdue = false
 
                                 if (invoice) {
-                                    // Calculate estimated payment date
-                                    // Assuming invoice issue date is close to class date or we just use class date + 30 business days if issue date not available
-                                    // Ideally we use invoice.issue_date, falling back to class date
                                     const baseDate = invoice.issue_date || cls.date
                                     estimatedPaymentDate = calculatePaymentDate(baseDate, cls.date, cls.class_type)
 
-                                    // Check if overdue: Not Paid AND Past Estimated Date
                                     if (!invoice.is_paid && isPast(estimatedPaymentDate)) {
                                         isOverdue = true
                                     }
@@ -101,6 +128,8 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                                 } else {
                                     statusBadge = <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Pendiente</span>
                                 }
+
+                                const isEditingThis = editingPriceId === cls.id
 
                                 return (
                                     <tr key={cls.id} className={`hover:bg-slate-50 transition-colors ${isOverdue ? 'bg-red-50/50 hover:bg-red-50' : ''}`}>
@@ -118,6 +147,10 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                                                 <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
                                                     In Company
                                                 </span>
+                                            ) : cls.class_type === 'special' ? (
+                                                <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100 gap-1">
+                                                    <Zap size={10} /> Especial
+                                                </span>
                                             ) : (
                                                 <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                                                     Abierto
@@ -129,6 +162,59 @@ export default function ClassTable({ classes }: { classes: any[] }) {
                                                 <span>{format(parseISO(cls.date + 'T00:00:00'), 'dd MMM yyyy', { locale: es })}</span>
                                                 <span className="text-xs text-slate-400">{cls.time.slice(0, 5)}</span>
                                             </div>
+                                        </td>
+                                        {/* Monto column with inline editing */}
+                                        <td className="px-6 py-4">
+                                            {isEditingThis ? (
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="relative">
+                                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={editPriceValue}
+                                                            onChange={(e) => setEditPriceValue(e.target.value)}
+                                                            className="w-28 pl-5 pr-2 py-1.5 text-xs border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/50 font-mono"
+                                                            autoFocus
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    e.preventDefault()
+                                                                    savePrice(cls.id)
+                                                                }
+                                                                if (e.key === 'Escape') cancelEditPrice()
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={() => savePrice(cls.id)}
+                                                        disabled={savingPrice}
+                                                        className="p-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors cursor-pointer disabled:opacity-50"
+                                                        title="Guardar"
+                                                    >
+                                                        <Check size={12} />
+                                                    </button>
+                                                    <button
+                                                        onClick={cancelEditPrice}
+                                                        className="p-1 bg-slate-100 text-slate-500 rounded-md hover:bg-slate-200 transition-colors cursor-pointer"
+                                                        title="Cancelar"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 group/price">
+                                                    <span className="font-mono text-slate-700 font-medium">
+                                                        ${fmtMoney(Number(cls.total_amount) || 0)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => startEditPrice(cls)}
+                                                        className="p-1 rounded-md text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer opacity-0 group-hover/price:opacity-100"
+                                                        title="Editar precio"
+                                                    >
+                                                        <Pencil size={12} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                         {activeTab === 'history' && (
                                             <td className="px-6 py-4">

@@ -161,6 +161,16 @@ export default function ClassDetailsEditor({ classItem }: { classItem: any }) {
                         >
                             In Company
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setClassType('special')}
+                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${classType === 'special'
+                                ? 'bg-amber-50 border-amber-200 text-amber-700'
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                }`}
+                        >
+                            Especial
+                        </button>
                     </div>
                 </div>
             </div>

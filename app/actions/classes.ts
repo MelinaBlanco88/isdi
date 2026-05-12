@@ -57,6 +57,40 @@ export async function markAsCompleted(classId: string) {
     return { success: true }
 }
 
+export async function updateClassPrice(classId: string, newAmount: number) {
+    const supabase = await createClient()
+
+    // 1. Update the class total_amount
+    const { error } = await supabase
+        .from('classes')
+        .update({ total_amount: newAmount })
+        .eq('id', classId)
+
+    if (error) {
+        console.error('Error updating class price:', error)
+        return { error: 'Error updating class price' }
+    }
+
+    // 2. Sync invoices if any exist
+    const { data: invoices } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('class_id', classId)
+
+    if (invoices && invoices.length > 0) {
+        for (const inv of invoices) {
+            await supabase
+                .from('invoices')
+                .update({ amount: newAmount })
+                .eq('id', inv.id)
+        }
+    }
+
+    revalidatePath('/')
+    revalidatePath('/classes')
+    return { success: true }
+}
+
 export async function deleteClass(classId: string) {
     const supabase = await createClient()
 
